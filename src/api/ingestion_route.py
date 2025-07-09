@@ -22,43 +22,6 @@ class IngestionRoutes:
 
     def setup_routes(self):
         @self.router.post(
-            "/ingest-recipe",
-            status_code=status.HTTP_200_OK,
-            summary="Ingest a recipe into the database",
-            description="Ingest a recipe into the database",
-            response_model=IngestRecipeResponse,
-            response_description="Ingest a recipe into the database",
-        )
-        async def ingest_recipe(
-            file: UploadFile = File(..., description="TXT file to import"),
-        ):
-            """
-            Ingest a recipe into the database.
-
-            Args:
-                file (UploadFile): The file to ingest.
-
-            Returns:
-                IngestRecipeResponse: The response containing the ingested recipe.
-            """
-            content = await file.read()
-            recipe = self.ingestion_service.ingest_recipe(content.decode('utf-8'))
-            if recipe is None:
-                return IngestRecipeResponse(success=False, recipe=None, error="Failed to ingest recipe")
-            
-            # TODO : Make sure the ingredients and instructions are user friendly with space as "," or markdown format
-            recipe_response = RecipeResponse(
-                id=recipe.id,
-                title=recipe.title,
-                ingredients=recipe.ingredients,
-                instructions=recipe.instructions,
-                embedding=recipe.embedding,
-                created_at=recipe.created_at.isoformat() if recipe.created_at else None,
-                updated_at=recipe.updated_at.isoformat() if recipe.updated_at else None
-            )
-            return IngestRecipeResponse(success=True, recipe=recipe_response)
-
-        @self.router.post(
                 "/ingest-recipes",
                 status_code=status.HTTP_200_OK,
                 summary="Ingest multiple recipes into the database",
@@ -78,4 +41,21 @@ class IngestionRoutes:
             Returns:
                 IngestRecipesResponse: The response containing the ingested recipes.
             """
-            pass
+            resp = []
+            for file in files:
+                content = await file.read()
+                recipe = self.ingestion_service.ingest_recipe(content.decode('utf-8'))
+                if recipe is None:
+                    resp.append(IngestRecipeResponse(success=False, recipe=None, error="Failed to ingest recipe"))
+                else:
+                    recipe_response = RecipeResponse(
+                        id=recipe.id,
+                        title=recipe.title,
+                        ingredients=recipe.ingredients,
+                        instructions=recipe.instructions,
+                        # embedding=recipe.embedding, # NOTE: We don't need to return the embedding for now
+                        created_at=recipe.created_at.isoformat() if recipe.created_at else None,
+                        updated_at=recipe.updated_at.isoformat() if recipe.updated_at else None
+                    )
+                    resp.append(IngestRecipeResponse(success=True, recipe=recipe_response))
+            return IngestRecipesResponse(recipes=resp)
