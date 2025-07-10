@@ -10,8 +10,9 @@ from src.data.database import DatabaseManager
 from src.data.repository import Repository
 from src.core.ingestion_service import IngestionService
 from src.core.recommendation_service import RecommendationService
-from ai.embedding import EmbeddingService
-from ai.rag import RecipeRAGPipeline
+from src.ai.embedding import EmbeddingService
+from src.ai.rag import RecipeRAGPipeline
+from src.ai.vision import ImageVisionService
 from src.utils.logger import Logger
 
 
@@ -55,10 +56,13 @@ def init_services(app: FastAPI, settings: Settings):
     rag_pipeline = RecipeRAGPipeline(settings)
     app.state.rag_pipeline = rag_pipeline
 
+    vision_service = ImageVisionService(settings)
+    app.state.vision_service = vision_service
+
     ingestion_service = IngestionService(app.state.repository, app.state.embedding_service)
     app.state.ingestion_service = ingestion_service
 
-    recommendation_service = RecommendationService(app.state.repository, app.state.embedding_service, app.state.rag_pipeline)
+    recommendation_service = RecommendationService(app.state.repository, app.state.embedding_service, app.state.rag_pipeline, app.state.vision_service)
     app.state.recommendation_service = recommendation_service
 
 

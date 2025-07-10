@@ -65,3 +65,15 @@ class IngestRecipesResponse(BaseModel):
         recipes (list[IngestRecipeResponse]): The ingested recipes.
     """
     recipes: list[IngestRecipeResponse] = Field(..., description="The ingested recipes.")
+
+
+class RecommendRecipeFromImageResponse(BaseModel):
+    """
+    Response schema for recommending a recipe from an image.
+
+    Args:
+        detected_ingredients (list[str]): The ingredients detected in the image.
+        recipe (str): The recommended recipe based on detected ingredients.
+    """
+    detected_ingredients: list[str] = Field(..., description="The ingredients detected in the image.")
+    recipe: str = Field(..., description="The recommended recipe based on detected ingredients.")
