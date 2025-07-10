@@ -22,7 +22,13 @@ This project is a proof-of-concept AI-powered recipe recommendation system. It p
    ```
    This command builds the Docker images and starts both the FastAPI app and the Postgres database. On startup, the app automatically ingests the provided recipes into the database.
 
-2. **Recipe Ingestion:**
+2. **Start without loading initial data:**
+   ```sh
+   LOAD_STARTUP_DATA=false docker compose up --build -d
+   ```
+   Use this command if you want to start the app with an empty database and load recipes manually via the API.
+
+3. **Recipe Ingestion:**
    - **Automatic:** Recipes from `data.zip` or `data/recipes/` are loaded into the database on startup.
    - **Manual (API):** You can also ingest recipes via the `/api/v1/ingest-recipes` endpoint by uploading `.txt` files. This endpoint is useful for adding new recipes at runtime, supporting dynamic updates and integration with other systems.
 
@@ -109,8 +115,8 @@ To ensure a clean environment and proper test flow, run each command below one a
 ```bash
 docker compose down -v
 ```
-```
-docker compose up --build -d
+```bash
+LOAD_STARTUP_DATA=false docker compose up --build -d
 ```
 
 2. Run Ingestion

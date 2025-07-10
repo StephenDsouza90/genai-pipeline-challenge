@@ -15,6 +15,7 @@ from fastapi import FastAPI
 from src.config import Settings
 from src.api.recommendation_route import RecommendationRoutes
 from src.api.ingestion_route import IngestionRoutes
+from src.api.health_route import HealthRoutes
 from src.api.client import API
 from src.data.database import DatabaseManager
 from src.data.repository import Repository
@@ -102,6 +103,9 @@ def init_routes(app: FastAPI, settings: Settings):
         app.state.ingestion_service, app.state.logger, settings
     )
     app.include_router(ingestion_routes.router, prefix=settings.api_prefix)
+
+    health_routes = HealthRoutes()
+    app.include_router(health_routes.router)
 
 
 def load_startup_data(app: FastAPI):
@@ -216,7 +220,10 @@ def create_app() -> FastAPI:
 
         init_routes(app, settings)
 
-        load_startup_data(app)
+        if settings.load_startup_data:
+            load_startup_data(app)
+        else:
+            app.state.logger.info("Startup data loading disabled by configuration")
 
         app.state.logger.info("App initialized")
 

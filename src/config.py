@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     recipes_directory: str = "data/recipes"
     recipe_file_extension: str = ".txt"
     file_encoding: str = "utf-8"
+    
+    # Startup Data Loading Configuration
+    load_startup_data: bool = True
 
     # Error Messages
     generic_error_message: str = "I apologize, but I'm having trouble processing your request at the moment. Please try again later."
