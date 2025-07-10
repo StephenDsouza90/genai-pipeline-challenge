@@ -6,6 +6,7 @@ from haystack.utils import Secret
 
 from src.config import Settings
 from src.data.models import Recipe
+from src.utils.logger import Logger
 
 
 class RecipeRAGPipeline:
@@ -13,7 +14,7 @@ class RecipeRAGPipeline:
     RAG (Retrieval-Augmented Generation) pipeline for recipe recommendations using Haystack.
     """
     
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, logger: Logger):
         """
         Initialize the RAG pipeline.
         
@@ -21,6 +22,7 @@ class RecipeRAGPipeline:
             settings (Settings): Application settings containing OpenAI configuration.
         """
         self.settings = settings
+        self.logger = logger
         self._setup_pipeline()
     
     def _setup_pipeline(self):
@@ -81,12 +83,16 @@ class RecipeRAGPipeline:
         Returns:
             str: Generated recipe recommendation in Markdown format.
         """
-        result = self.pipeline.run({
-            "prompt_builder": {
-                "recipes": recipes,
-                "ingredients": ingredients
-            }
-        })
-        
-        return result["chat_generator"]["replies"][0].text if result and "chat_generator" in result and "replies" in result["chat_generator"] else "I apologize, but I'm having trouble generating a recipe recommendation at the moment. Please try again later."
+        try:
+            result = self.pipeline.run({
+                "prompt_builder": {
+                    "recipes": recipes,
+                    "ingredients": ingredients
+                }
+                })
+                
+            return result["chat_generator"]["replies"][0].text if result and "chat_generator" in result and "replies" in result["chat_generator"] else "I apologize, but I'm having trouble generating a recipe recommendation at the moment. Please try again later."
+        except Exception as e:
+            self.logger.error(f"Error generating recipe recommendation: {e}")
+            return "I apologize, but I'm having trouble generating a recipe recommendation at the moment. Please try again later."
     

@@ -2,6 +2,7 @@ from haystack.components.embedders import OpenAITextEmbedder
 from haystack.utils import Secret
 
 from src.config import Settings
+from src.utils.logger import Logger
 
 
 class EmbeddingService:
@@ -9,7 +10,7 @@ class EmbeddingService:
     Service for generating text embeddings using Haystack and OpenAI.
     """
     
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, logger: Logger):
         """
         Initialize the embedding service.
         
@@ -17,6 +18,7 @@ class EmbeddingService:
             settings (Settings): Application settings containing OpenAI API key.
         """
         self.settings = settings
+        self.logger = logger
         self.embedder = OpenAITextEmbedder(
             api_key=Secret.from_token(settings.openai_api_key),
             model=settings.openai_embedding_model,
@@ -40,7 +42,8 @@ class EmbeddingService:
             result = self.embedder.run(text=combined_text)
             return result["embedding"] if result and "embedding" in result else None
             
-        except Exception:
+        except Exception as e:
+            self.logger.error(f"Error generating recipe embedding: {e}")
             return None
 
     def generate_text_embedding(self, text: str) -> list[float] | None:
@@ -57,5 +60,6 @@ class EmbeddingService:
             result = self.embedder.run(text=text)
             return result["embedding"] if result and "embedding" in result else None
 
-        except Exception:
+        except Exception as e:
+            self.logger.error(f"Error generating text embedding: {e}")
             return None

@@ -5,6 +5,7 @@ from openai import OpenAI
 from PIL import Image
 
 from src.config import Settings
+from src.utils.logger import Logger
 
 
 class ImageVisionService:
@@ -12,7 +13,7 @@ class ImageVisionService:
     Service for analyzing images and extracting food ingredients using OpenAI Vision API.
     """
     
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, logger: Logger):
         """
         Initialize the image vision service.
         
@@ -20,6 +21,7 @@ class ImageVisionService:
             settings (Settings): Application settings containing OpenAI API key.
         """
         self.settings = settings
+        self.logger = logger
         self.client = OpenAI(api_key=settings.openai_api_key)
     
     def extract_ingredients_from_image(self, image_data: bytes) -> list[str]:
@@ -79,6 +81,7 @@ class ImageVisionService:
             return ingredients
             
         except Exception as e:
+            self.logger.error(f"Error extracting ingredients from image: {e}")
             return []
     
     def validate_image(self, image_data: bytes) -> bool:
@@ -94,5 +97,6 @@ class ImageVisionService:
         try:
             image = Image.open(io.BytesIO(image_data))
             return image.format in ['JPEG', 'PNG', 'WEBP', 'GIF']
-        except Exception:
+        except Exception as e:
+            self.logger.error(f"Error validating image: {e}")
             return False 

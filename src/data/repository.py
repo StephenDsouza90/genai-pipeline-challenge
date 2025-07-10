@@ -3,6 +3,7 @@ from sqlalchemy import text
 from src.data.database import DatabaseManager
 from src.data.decorator import handle_session
 from src.data.models import Recipe
+from src.utils.logger import Logger
 
 
 class Repository:
@@ -10,7 +11,7 @@ class Repository:
     Repository class for database operations.
     """
     
-    def __init__(self, db_manager: DatabaseManager):
+    def __init__(self, db_manager: DatabaseManager, logger: Logger):
         """
         Initialize repository with database session.
 
@@ -18,6 +19,7 @@ class Repository:
             db_manager (DatabaseManager): The database manager.
         """
         self.db_manager = db_manager
+        self.logger = logger
     
     @handle_session
     def create(self, session, recipe: Recipe) -> Recipe:

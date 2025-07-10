@@ -15,6 +15,7 @@ def handle_session(f):
 
         except IntegrityError as e:
             session.rollback()
+            self.logger.error(f"Error: {e}")
             raise Exception(f"Error: {e}")
 
         finally:

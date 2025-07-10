@@ -37,12 +37,12 @@ def init_db(app: FastAPI, settings: Settings):
         app (FastAPI): The FastAPI application instance.
         settings (Settings): The settings for the application.
     """
-    db_manager = DatabaseManager(settings)
+    db_manager = DatabaseManager(settings, app.state.logger)
     db_manager.bootstrap()
-
-    repository = Repository(db_manager)
-    app.state.repository = repository
     app.state.db_manager = db_manager
+
+    repository = Repository(app.state.db_manager, app.state.logger)
+    app.state.repository = repository
 
 
 def init_services(app: FastAPI, settings: Settings):
@@ -53,19 +53,19 @@ def init_services(app: FastAPI, settings: Settings):
         app (FastAPI): The FastAPI application instance.
         settings (Settings): The settings for the application.
     """
-    embedding_service = EmbeddingService(settings)
+    embedding_service = EmbeddingService(settings, app.state.logger)
     app.state.embedding_service = embedding_service
 
-    rag_pipeline = RecipeRAGPipeline(settings)
+    rag_pipeline = RecipeRAGPipeline(settings, app.state.logger)
     app.state.rag_pipeline = rag_pipeline
 
-    vision_service = ImageVisionService(settings)
+    vision_service = ImageVisionService(settings, app.state.logger)
     app.state.vision_service = vision_service
 
-    ingestion_service = IngestionService(app.state.repository, app.state.embedding_service)
+    ingestion_service = IngestionService(app.state.repository, app.state.embedding_service, app.state.logger)
     app.state.ingestion_service = ingestion_service
 
-    recommendation_service = RecommendationService(app.state.repository, app.state.embedding_service, app.state.rag_pipeline, app.state.vision_service)
+    recommendation_service = RecommendationService(app.state.repository, app.state.embedding_service, app.state.rag_pipeline, app.state.vision_service, app.state.logger)
     app.state.recommendation_service = recommendation_service
 
 
@@ -76,10 +76,10 @@ def init_routes(app: FastAPI):
     Args:
         app (FastAPI): The FastAPI application instance.
     """
-    recommendation_routes = RecommendationRoutes(app.state.recommendation_service)
+    recommendation_routes = RecommendationRoutes(app.state.recommendation_service, app.state.logger)
     app.include_router(recommendation_routes.router, prefix="/api/v1")
 
-    ingestion_routes = IngestionRoutes(app.state.ingestion_service)
+    ingestion_routes = IngestionRoutes(app.state.ingestion_service, app.state.logger)
     app.include_router(ingestion_routes.router, prefix="/api/v1")
 
 
@@ -95,11 +95,9 @@ def load_startup_data(app: FastAPI):
     logger = app.state.logger
     ingestion_service = app.state.ingestion_service
     
-    # Counter for tracking ingestion results
     success_count = 0
     error_count = 0
     
-    # Check for data.zip file first
     data_zip_path = Path("data.zip")
     recipes_dir_path = Path("data/recipes")
     
@@ -127,7 +125,6 @@ def load_startup_data(app: FastAPI):
     elif recipes_dir_path.exists() and recipes_dir_path.is_dir():
         logger.info("Loading recipes from data/recipes folder...")
         
-        # Get all .txt files in the recipes directory
         recipe_files = list(recipes_dir_path.glob("*.txt"))
         
         if not recipe_files:
@@ -152,7 +149,6 @@ def load_startup_data(app: FastAPI):
         logger.warning("No data.zip file or data/recipes folder found for startup data loading")
         return
     
-    # Log summary
     total_processed = success_count + error_count
     if total_processed > 0:
         logger.info(f"Startup data loading completed: {success_count} successful, {error_count} errors out of {total_processed} files processed")
@@ -180,7 +176,6 @@ def create_app() -> FastAPI:
 
         init_routes(app)
 
-        # Load startup data from local files
         load_startup_data(app)
 
         app.state.logger.info("App initialized")

@@ -2,6 +2,7 @@ from fastapi import APIRouter, status, File, UploadFile, HTTPException
 
 from src.api.schemas import RecommendRecipeRequest, RecommendRecipeResponse, RecommendRecipeFromImageResponse
 from src.core.recommendation_service import RecommendationService
+from src.utils.logger import Logger
 
 
 class RecommendationRoutes:
@@ -9,7 +10,7 @@ class RecommendationRoutes:
     This class defines the API routes for the AI Recipe Generator application.
     """
 
-    def __init__(self, recommendation_service: RecommendationService):
+    def __init__(self, recommendation_service: RecommendationService, logger: Logger):
         """
         Initialize the Routes class.
 
@@ -17,6 +18,7 @@ class RecommendationRoutes:
             recommendation_service (RecommendationService): The recommendation service to use.
         """
         self.recommendation_service = recommendation_service
+        self.logger = logger
         self.router = APIRouter(tags=["Recommendation"])
         self.setup_routes()
 
@@ -39,7 +41,18 @@ class RecommendationRoutes:
             Returns:
                 RecommendRecipeResponse: The response containing the recommended recipe.
             """
-            response = self.recommendation_service.recommend_recipe(request.ingredients)
+            try:
+                self.logger.info(f"Recommend recipe request: {request.ingredients}")
+
+                response = self.recommendation_service.recommend_recipe(request.ingredients)
+
+                self.logger.info(f"Recommend recipe response: {response}")
+            except Exception as e:
+                self.logger.error(f"Error recommending recipe: {e}")
+                raise HTTPException(
+                    status_code=500,
+                    detail="I apologize, but I'm having trouble generating a recipe recommendation at the moment. Please try again later."
+                )
             return RecommendRecipeResponse(recipe=response)
 
         @self.router.post(
@@ -62,21 +75,27 @@ class RecommendationRoutes:
             Returns:
                 RecommendRecipeFromImageResponse: The response containing detected ingredients and recommended recipe.
             """
-            if not image.content_type or not image.content_type.startswith('image/'):
-                raise HTTPException(
-                    status_code=400,
-                    detail="Invalid file type. Please upload an image file."
-                )
-            
             try:
+                self.logger.info(f"Image content type: {image.content_type}")
+
+                if not image.content_type or not image.content_type.startswith('image/'):
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Invalid file type. Please upload an image file."
+                    )
+            
                 image_data = await image.read()
-            except Exception:
+                detected_ingredients, recipe = self.recommendation_service.recommend_recipe_from_image(image_data)
+
+                self.logger.info(f"Detected ingredients: {detected_ingredients}")
+                self.logger.info(f"Recipe: {recipe}")
+
+            except Exception as e:
+                self.logger.error(f"Error reading image: {e}")
                 raise HTTPException(
-                    status_code=400,
+                        status_code=400,
                     detail="Failed to read the uploaded image file."
                 )
-            
-            detected_ingredients, recipe = self.recommendation_service.recommend_recipe_from_image(image_data)
             
             return RecommendRecipeFromImageResponse(
                 detected_ingredients=detected_ingredients,

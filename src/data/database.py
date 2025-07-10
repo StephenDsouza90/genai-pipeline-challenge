@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 
 from src.data.base import Base
 from src.config import Settings
+from src.utils.logger import Logger
 
 
 class DatabaseManager:
@@ -12,7 +13,7 @@ class DatabaseManager:
     Manages database connections and sessions.
     """
 
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, logger: Logger):
         """
         Initialize database manager with connection URL.
 
@@ -20,6 +21,7 @@ class DatabaseManager:
             settings: Settings object containing database configuration.
         """
         self.database_url = settings.database_url
+        self.logger = logger
         self.engine: Engine | None = None
         self.Session = sessionmaker(autoflush=True)
         self._setup_engine()
@@ -60,21 +62,23 @@ class DatabaseManager:
         for i in range(max_retries):
             try:
                 connection = self.engine.connect()
-                self._enable_pgvector(connection)
+                self._enable_pg_vector(connection)
                 break
 
             except Exception as e:
+                self.logger.error(f"Failed to connect to the database after {i + 1} attempts: {e}")
                 if i < max_retries - 1:
                     time.sleep(retry_delay)
 
         if not connection:
-            error_msg = f"Failed to connect to the database after {max_retries} attempts"
-            raise Exception(error_msg)
+            message = f"Failed to connect to the database after {max_retries} attempts"
+            self.logger.error(message)
+            raise Exception(message)
 
         self._create_tables()
         connection.close()
 
-    def _enable_pgvector(self, connection: Connection):
+    def _enable_pg_vector(self, connection: Connection):
         connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         connection.commit()
 

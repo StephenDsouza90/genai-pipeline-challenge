@@ -4,6 +4,7 @@ from typing import Optional
 from src.data.repository import Repository
 from src.data.models import Recipe
 from src.ai.embedding import EmbeddingService
+from src.utils.logger import Logger
 
 
 class IngestionService:
@@ -11,7 +12,7 @@ class IngestionService:
     Service class for ingesting recipe data into the database.
     """
     
-    def __init__(self, repository: Repository, embedding_service: EmbeddingService):
+    def __init__(self, repository: Repository, embedding_service: EmbeddingService, logger: Logger):
         """
         Initialize the ingestion service.
 
@@ -21,6 +22,7 @@ class IngestionService:
         """
         self.repository = repository
         self.embedding_service = embedding_service
+        self.logger = logger
 
     def ingest_recipe(self, content: str) -> Optional[Recipe]:
         """
@@ -32,20 +34,26 @@ class IngestionService:
         Returns:
             Recipe: The ingested recipe.
         """
-        parsed_recipe = self.parse_content(content)
-        if not parsed_recipe:
+        try:
+            parsed_recipe = self.parse_content(content)
+            if not parsed_recipe:
+                self.logger.error("Failed to parse recipe content")
+                return None
+        
+            if self.repository.exists_by_title(parsed_recipe.title):
+                self.logger.info(f"Recipe already exists: {parsed_recipe.title}")
+                return self.repository.get_by_title(parsed_recipe.title)
+        
+            parsed_recipe.embedding = self.embedding_service.generate_recipe_embedding(
+                title=parsed_recipe.title,
+                ingredients=parsed_recipe.ingredients,
+                instructions=parsed_recipe.instructions
+            )
+            
+            return self.repository.create(parsed_recipe)
+        except Exception as e:
+            self.logger.error(f"Error ingesting recipe: {e}")
             return None
-        
-        if self.repository.exists_by_title(parsed_recipe.title):
-            return self.repository.get_by_title(parsed_recipe.title)
-        
-        parsed_recipe.embedding = self.embedding_service.generate_recipe_embedding(
-            title=parsed_recipe.title,
-            ingredients=parsed_recipe.ingredients,
-            instructions=parsed_recipe.instructions
-        )
-        
-        return self.repository.create(parsed_recipe)
     
     def parse_content(self, content: str) -> Optional[Recipe]:
         """
@@ -61,14 +69,17 @@ class IngestionService:
         
         title = self._extract_title(content)
         if not title:
+            self.logger.error("Failed to extract recipe title")
             return None
         
         ingredients = self._extract_ingredients(content)
         if not ingredients:
+            self.logger.error("Failed to extract ingredients")
             return None
         
         instructions = self._extract_instructions(content)
         if not instructions:
+            self.logger.error("Failed to extract instructions")
             return None
         
         return Recipe(
