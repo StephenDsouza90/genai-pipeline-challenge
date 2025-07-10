@@ -17,6 +17,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "python-multipart==0.0.20",
     "JSON-log-formatter==1.1.1",
+    "openai>=1.0.0",
 ]
 
 [tool.setuptools.packages.find]
