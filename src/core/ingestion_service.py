@@ -3,7 +3,7 @@ from typing import Optional
 
 from src.data.repository import Repository
 from src.data.models import Recipe
-from ai.embedding import EmbeddingService
+from src.ai.embedding import EmbeddingService
 
 
 class IngestionService:

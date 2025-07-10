@@ -1,4 +1,6 @@
+import zipfile
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 
@@ -40,6 +42,7 @@ def init_db(app: FastAPI, settings: Settings):
 
     repository = Repository(db_manager)
     app.state.repository = repository
+    app.state.db_manager = db_manager
 
 
 def init_services(app: FastAPI, settings: Settings):
@@ -80,6 +83,83 @@ def init_routes(app: FastAPI):
     app.include_router(ingestion_routes.router, prefix="/api/v1")
 
 
+def load_startup_data(app: FastAPI):
+    """
+    Load recipe data from local files during app startup.
+    
+    Checks for data.zip first, then falls back to data/recipes folder.
+    
+    Args:
+        app (FastAPI): The FastAPI application instance.
+    """
+    logger = app.state.logger
+    ingestion_service = app.state.ingestion_service
+    
+    # Counter for tracking ingestion results
+    success_count = 0
+    error_count = 0
+    
+    # Check for data.zip file first
+    data_zip_path = Path("data.zip")
+    recipes_dir_path = Path("data/recipes")
+    
+    if data_zip_path.exists():
+        logger.info("Found data.zip file, extracting and loading recipes...")
+        try:
+            with zipfile.ZipFile(data_zip_path, 'r') as zip_file:
+                for file_info in zip_file.infolist():
+                    if file_info.filename.endswith('.txt') and not file_info.is_dir():
+                        try:
+                            content = zip_file.read(file_info.filename).decode('utf-8')
+                            recipe = ingestion_service.ingest_recipe(content)
+                            if recipe:
+                                success_count += 1
+                                logger.info(f"Successfully ingested recipe: {recipe.title}")
+                            else:
+                                error_count += 1
+                                logger.warning(f"Failed to parse recipe from {file_info.filename}")
+                        except Exception as e:
+                            error_count += 1
+                            logger.error(f"Error processing {file_info.filename}: {str(e)}")
+        except Exception as e:
+            logger.error(f"Error reading data.zip file: {str(e)}")
+    
+    elif recipes_dir_path.exists() and recipes_dir_path.is_dir():
+        logger.info("Loading recipes from data/recipes folder...")
+        
+        # Get all .txt files in the recipes directory
+        recipe_files = list(recipes_dir_path.glob("*.txt"))
+        
+        if not recipe_files:
+            logger.warning("No .txt files found in data/recipes folder")
+            return
+        
+        for recipe_file in sorted(recipe_files):
+            try:
+                content = recipe_file.read_text(encoding='utf-8')
+                recipe = ingestion_service.ingest_recipe(content)
+                if recipe:
+                    success_count += 1
+                    logger.info(f"Successfully ingested recipe: {recipe.title}")
+                else:
+                    error_count += 1
+                    logger.warning(f"Failed to parse recipe from {recipe_file.name}")
+            except Exception as e:
+                error_count += 1
+                logger.error(f"Error processing {recipe_file.name}: {str(e)}")
+    
+    else:
+        logger.warning("No data.zip file or data/recipes folder found for startup data loading")
+        return
+    
+    # Log summary
+    total_processed = success_count + error_count
+    if total_processed > 0:
+        logger.info(f"Startup data loading completed: {success_count} successful, {error_count} errors out of {total_processed} files processed")
+    else:
+        logger.warning("No recipes were processed during startup data loading")
+
+
 def create_app() -> FastAPI:
     """
     Create and configure the FastAPI application, initializing async resources on startup.
@@ -100,7 +180,14 @@ def create_app() -> FastAPI:
 
         init_routes(app)
 
+        # Load startup data from local files
+        load_startup_data(app)
+
+        app.state.logger.info("App initialized")
+
         yield
+
+        app.state.logger.info("App shutdown")
 
         app.state.db_manager.close()
 
