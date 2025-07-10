@@ -1,3 +1,11 @@
+"""
+Recipe recommendation service using RAG and vision analysis.
+
+This module orchestrates recipe recommendations by combining vector similarity
+search, RAG-based generation, and image analysis to provide personalized
+recipe suggestions based on available ingredients.
+"""
+
 from src.data.repository import Repository
 from src.ai.embedding import EmbeddingService
 from src.ai.rag import RecipeRAGPipeline
@@ -9,8 +17,15 @@ class RecommendationService:
     """
     Service class for recommending recipes using RAG (Retrieval-Augmented Generation).
     """
-    
-    def __init__(self, repository: Repository, embedding_service: EmbeddingService, rag_pipeline: RecipeRAGPipeline, vision_service: ImageVisionService, logger: Logger):
+
+    def __init__(
+        self,
+        repository: Repository,
+        embedding_service: EmbeddingService,
+        rag_pipeline: RecipeRAGPipeline,
+        vision_service: ImageVisionService,
+        logger: Logger,
+    ):
         """
         Initialize the recommendation service.
 
@@ -19,6 +34,7 @@ class RecommendationService:
             embedding_service (EmbeddingService): The embedding service.
             rag_pipeline (RecipeRAGPipeline): The RAG pipeline for generating recommendations.
             vision_service (ImageVisionService): The vision service for image analysis.
+            logger (Logger): The logger.
         """
         self.repository = repository
         self.embedding_service = embedding_service
@@ -36,22 +52,19 @@ class RecommendationService:
         Returns:
             str: The recommended recipe in Markdown format.
         """
-        try:
-            ingredients_text = ", ".join(ingredients)
-            
-            query_embedding = self.embedding_service.generate_text_embedding(ingredients_text)
-            
-            similar_recipes = self.repository.search_by_embedding(query_embedding, limit=3)
+        ingredients_text = ", ".join(ingredients)
 
-            if not similar_recipes:
-                self.logger.info("No similar recipes found, using RAG pipeline")
-                # TODO : Implement this
-                pass
+        query_embedding = self.embedding_service.generate_text_embedding(
+            ingredients_text
+        )
 
-            return self.rag_pipeline.generate_recommendation(similar_recipes, ingredients_text)
-        except Exception as e:
-            self.logger.error(f"Error recommending recipe: {e}")
-            return "I apologize, but I'm having trouble generating a recipe recommendation at the moment. Please try again later."
+        similar_recipes = self.repository.search_by_embedding(
+            query_embedding, limit=self.repository.settings.recommendation_search_limit
+        )
+
+        return self.rag_pipeline.generate_recommendation(
+            similar_recipes, ingredients_text
+        )
 
     def recommend_recipe_from_image(self, image_data: bytes) -> tuple[list[str], str]:
         """
@@ -64,13 +77,21 @@ class RecommendationService:
             tuple[list[str], str]: A tuple containing the detected ingredients and the recommended recipe.
         """
         if not self.vision_service.validate_image(image_data):
-            return [], "Invalid image format. Please upload a valid image file (JPEG, PNG, WEBP, or GIF)."
-        
-        detected_ingredients = self.vision_service.extract_ingredients_from_image(image_data)
-        
+            return (
+                [],
+                "Invalid image format. Please upload a valid image file (JPEG, PNG, WEBP, or GIF).",
+            )
+
+        detected_ingredients = self.vision_service.extract_ingredients_from_image(
+            image_data
+        )
+
         if not detected_ingredients:
-            return [], "No ingredients could be detected in the image. Please try uploading a clearer image with visible food ingredients."
-        
+            return (
+                [],
+                "No ingredients could be detected in the image. Please try uploading a clearer image with visible food ingredients.",
+            )
+
         recipe = self.recommend_recipe(detected_ingredients)
-        
+
         return detected_ingredients, recipe

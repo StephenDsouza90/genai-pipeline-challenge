@@ -1,3 +1,10 @@
+"""
+Database session management decorators.
+
+This module provides decorators for handling database sessions, including
+automatic session cleanup and error handling for repository operations.
+"""
+
 from sqlalchemy.exc import IntegrityError
 
 

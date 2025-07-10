@@ -1,3 +1,10 @@
+"""
+Database connection and session management.
+
+This module provides database connectivity, session management, and initialization
+functionality for the PostgreSQL database with pgvector extension support.
+"""
+
 import time
 
 from sqlalchemy import create_engine, text, Connection, Engine
@@ -5,6 +12,7 @@ from sqlalchemy.orm import sessionmaker
 
 from src.data.base import Base
 from src.config import Settings
+from src.constants import VECTOR_EXTENSION_QUERY
 from src.utils.logger import Logger
 
 
@@ -19,13 +27,14 @@ class DatabaseManager:
 
         Args:
             settings: Settings object containing database configuration.
+            logger: Logger object for logging.
         """
-        self.database_url = settings.database_url
+        self.settings = settings
         self.logger = logger
         self.engine: Engine | None = None
         self.Session = sessionmaker(autoflush=True)
         self._setup_engine()
-        
+
     def _setup_engine(self) -> None:
         """
         Initialize database engine and session factory.
@@ -34,18 +43,18 @@ class DatabaseManager:
             return
 
         self.engine = create_engine(
-            self.database_url,
+            self.settings.database_url,
             echo=True,
             pool_pre_ping=True,
-            pool_recycle=300,
+            pool_recycle=self.settings.database_pool_recycle,
         )
 
         self.Session.configure(bind=self.engine)
 
     def bootstrap(
         self,
-        max_retries: int = 5,
-        retry_delay: int = 2,
+        max_retries: int | None = None,
+        retry_delay: int | None = None,
     ):
         """
         Connect to the database and create the tables.
@@ -59,6 +68,9 @@ class DatabaseManager:
         """
         connection: Connection | None = None
 
+        max_retries = max_retries or self.settings.database_max_retries
+        retry_delay = retry_delay or self.settings.database_retry_delay
+
         for i in range(max_retries):
             try:
                 connection = self.engine.connect()
@@ -66,7 +78,9 @@ class DatabaseManager:
                 break
 
             except Exception as e:
-                self.logger.error(f"Failed to connect to the database after {i + 1} attempts: {e}")
+                self.logger.error(
+                    f"Failed to connect to the database after {i + 1} attempts: {e}"
+                )
                 if i < max_retries - 1:
                     time.sleep(retry_delay)
 
@@ -79,7 +93,7 @@ class DatabaseManager:
         connection.close()
 
     def _enable_pg_vector(self, connection: Connection):
-        connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        connection.execute(text(VECTOR_EXTENSION_QUERY))
         connection.commit()
 
     def _create_tables(self):
@@ -87,7 +101,7 @@ class DatabaseManager:
         Create all database tables.
         """
         Base.metadata.create_all(bind=self.engine)
-    
+
     def close(self):
         """
         Close database connections.

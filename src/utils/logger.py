@@ -1,6 +1,16 @@
+"""
+Application logging configuration and utilities.
+
+This module provides a centralized logging system using JSON formatting
+for structured logging, suitable for production environments and log
+aggregation systems.
+"""
+
 import logging
 
 import json_log_formatter
+
+from src.constants import APP_LOGGER_NAME
 
 
 class Logger:
@@ -32,7 +42,7 @@ class Logger:
             json_handler = logging.StreamHandler()
             json_handler.setFormatter(json_log_formatter.JSONFormatter())
 
-            cls._logger = logging.getLogger("app_logger")
+            cls._logger = logging.getLogger(APP_LOGGER_NAME)
             cls._logger.addHandler(json_handler)
             cls._logger.setLevel(logging.INFO)
             cls._logger.propagate = False

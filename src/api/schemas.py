@@ -1,3 +1,11 @@
+"""
+API request and response schemas using Pydantic.
+
+This module defines all the data models for API requests and responses,
+including recipe recommendation requests, ingestion responses, and image
+analysis responses with proper validation and documentation.
+"""
+
 from pydantic import BaseModel, Field
 
 
@@ -8,7 +16,10 @@ class RecommendRecipeRequest(BaseModel):
     Args:
         ingredients (list[str]): The ingredients to recommend a recipe for.
     """
-    ingredients: list[str] = Field(..., description="The ingredients to recommend a recipe for.")
+
+    ingredients: list[str] = Field(
+        ..., description="The ingredients to recommend a recipe for."
+    )
 
 
 class RecommendRecipeResponse(BaseModel):
@@ -18,6 +29,7 @@ class RecommendRecipeResponse(BaseModel):
     Args:
         recipe (str): The recommended recipe.
     """
+
     recipe: str = Field(..., description="The recommended recipe.")
 
 
@@ -34,6 +46,7 @@ class RecipeResponse(BaseModel):
         created_at (str | None): The creation date of the recipe.
         updated_at (str | None): The last update date of the recipe.
     """
+
     id: int
     title: str
     ingredients: str
@@ -52,9 +65,15 @@ class IngestRecipeResponse(BaseModel):
         recipe (RecipeResponse | None): The ingested recipe.
         error (str | None): The error message if the recipe was not ingested successfully.
     """
-    success: bool = Field(..., description="Whether the recipe was ingested successfully.")
+
+    success: bool = Field(
+        ..., description="Whether the recipe was ingested successfully."
+    )
     recipe: RecipeResponse | None = Field(None, description="The ingested recipe.")
-    error: str | None = Field(None, description="The error message if the recipe was not ingested successfully.")
+    error: str | None = Field(
+        None,
+        description="The error message if the recipe was not ingested successfully.",
+    )
 
 
 class IngestRecipesResponse(BaseModel):
@@ -64,7 +83,10 @@ class IngestRecipesResponse(BaseModel):
     Args:
         recipes (list[IngestRecipeResponse]): The ingested recipes.
     """
-    recipes: list[IngestRecipeResponse] = Field(..., description="The ingested recipes.")
+
+    recipes: list[IngestRecipeResponse] = Field(
+        ..., description="The ingested recipes."
+    )
 
 
 class RecommendRecipeFromImageResponse(BaseModel):
@@ -75,5 +97,10 @@ class RecommendRecipeFromImageResponse(BaseModel):
         detected_ingredients (list[str]): The ingredients detected in the image.
         recipe (str): The recommended recipe based on detected ingredients.
     """
-    detected_ingredients: list[str] = Field(..., description="The ingredients detected in the image.")
-    recipe: str = Field(..., description="The recommended recipe based on detected ingredients.")
+
+    detected_ingredients: list[str] = Field(
+        ..., description="The ingredients detected in the image."
+    )
+    recipe: str = Field(
+        ..., description="The recommended recipe based on detected ingredients."
+    )
