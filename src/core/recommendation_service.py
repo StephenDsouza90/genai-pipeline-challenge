@@ -1,6 +1,6 @@
 from src.data.repository import Repository
-from src.pipelines.embedding_service import EmbeddingService
-from src.pipelines.rag_pipeline import RecipeRAGPipeline
+from ai.embedding import EmbeddingService
+from ai.rag import RecipeRAGPipeline
 
 
 class RecommendationService:

@@ -10,8 +10,8 @@ from src.data.database import DatabaseManager
 from src.data.repository import Repository
 from src.core.ingestion_service import IngestionService
 from src.core.recommendation_service import RecommendationService
-from src.pipelines.embedding_service import EmbeddingService
-from src.pipelines.rag_pipeline import RecipeRAGPipeline
+from ai.embedding import EmbeddingService
+from ai.rag import RecipeRAGPipeline
 from src.utils.logger import Logger
 
 
