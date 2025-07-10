@@ -16,6 +16,9 @@ This project is a proof-of-concept AI-powered recipe recommendation system. It p
 ---
 
 ## How to Run
+
+Before running the commands, save the OpenAI API key in the `docker-compose.yml` file in `OPENAI_API_KEY`
+
 1. **Build and start the app and database:**
    ```sh
    docker compose up --build -d
