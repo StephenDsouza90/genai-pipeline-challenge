@@ -88,9 +88,6 @@ class Repository:
         Returns:
             list[Recipe]: List of similar recipes ordered by similarity.
         """
-        if not embedding:
-            return []
-
         limit = limit or self.settings.default_search_limit
 
         query = text("""

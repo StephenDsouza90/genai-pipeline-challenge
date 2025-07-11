@@ -7,7 +7,6 @@ in the database with generated embeddings.
 """
 
 import re
-from typing import Optional
 
 from src.constants import RECIPE_SECTIONS
 from src.data.repository import Repository
@@ -38,7 +37,7 @@ class IngestionService:
         self.embedding_service = embedding_service
         self.logger = logger
 
-    def ingest_recipe(self, content: str) -> Optional[Recipe]:
+    def ingest_recipe(self, content: str) -> Recipe:
         """
         Ingest a recipe into the database.
 
@@ -47,12 +46,12 @@ class IngestionService:
 
         Returns:
             Recipe: The ingested recipe.
+
+        Raises:
+            Exception: If the recipe ingestion fails.
         """
         try:
             parsed_recipe = self.parse_content(content)
-            if not parsed_recipe:
-                self.logger.error("Failed to parse recipe content")
-                return None
 
             if self.repository.exists_by_title(parsed_recipe.title):
                 self.logger.info(f"Recipe already exists: {parsed_recipe.title}")
@@ -67,9 +66,9 @@ class IngestionService:
             return self.repository.create(parsed_recipe)
         except Exception as e:
             self.logger.error(f"Error ingesting recipe: {e}")
-            return None
+            raise Exception(f"Error ingesting recipe: {e}")
 
-    def parse_content(self, content: str) -> Optional[Recipe]:
+    def parse_content(self, content: str) -> Recipe:
         """
         Parse recipe content and extract title, ingredients, and instructions.
 
@@ -77,28 +76,31 @@ class IngestionService:
             content (str): The content to parse.
 
         Returns:
-            Optional[Recipe]: The parsed recipe data.
+            Recipe: The parsed recipe data.
+
+        Raises:
+            Exception: If the recipe parsing fails.
         """
         content = content.strip()
 
         title = self._extract_title(content)
         if not title:
             self.logger.error("Failed to extract recipe title")
-            return None
+            raise Exception("Failed to extract recipe title")
 
         ingredients = self._extract_ingredients(content)
         if not ingredients:
             self.logger.error("Failed to extract ingredients")
-            return None
+            raise Exception("Failed to extract ingredients")
 
         instructions = self._extract_instructions(content)
         if not instructions:
             self.logger.error("Failed to extract instructions")
-            return None
+            raise Exception("Failed to extract instructions")
 
         return Recipe(title=title, ingredients=ingredients, instructions=instructions)
 
-    def _extract_title(self, content: str) -> Optional[str]:
+    def _extract_title(self, content: str) -> str | None:
         """
         Extract recipe title from content.
 
@@ -106,7 +108,7 @@ class IngestionService:
             content (str): The content to extract the title from.
 
         Returns:
-            Optional[str]: The recipe title.
+            str | None: The recipe title.
         """
         for line in content.split("\n"):
             line = line.strip()
@@ -116,7 +118,7 @@ class IngestionService:
                 return line
         return None
 
-    def _extract_ingredients(self, content: str) -> Optional[str]:
+    def _extract_ingredients(self, content: str) -> str | None:
         """
         Extract ingredients section from content.
 
@@ -124,7 +126,7 @@ class IngestionService:
             content (str): The content to extract the ingredients from.
 
         Returns:
-            Optional[str]: The ingredients.
+            str | None: The ingredients.
         """
         ingredients_pattern = re.compile(
             r"Ingredients:\s*\n(.*?)(?=\n\s*Instructions:|$)", re.DOTALL | re.IGNORECASE
@@ -132,7 +134,6 @@ class IngestionService:
         match = ingredients_pattern.search(content)
         if match:
             ingredients_text = match.group(1).strip()
-            # Clean up the ingredients text
             ingredients_lines = []
             for line in ingredients_text.split("\n"):
                 line = line.strip()
@@ -141,7 +142,7 @@ class IngestionService:
             return "\n".join(ingredients_lines)
         return None
 
-    def _extract_instructions(self, content: str) -> Optional[str]:
+    def _extract_instructions(self, content: str) -> str | None:
         """
         Extract instructions section from content.
 
@@ -149,7 +150,7 @@ class IngestionService:
             content (str): The content to extract the instructions from.
 
         Returns:
-            Optional[str]: The instructions.
+            str | None: The instructions.
         """
         instructions_pattern = re.compile(
             r"Instructions:\s*\n(.*?)$", re.DOTALL | re.IGNORECASE
@@ -157,7 +158,6 @@ class IngestionService:
         match = instructions_pattern.search(content)
         if match:
             instructions_text = match.group(1).strip()
-            # Clean up the instructions text
             instructions_lines = []
             for line in instructions_text.split("\n"):
                 line = line.strip()

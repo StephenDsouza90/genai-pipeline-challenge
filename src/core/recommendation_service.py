@@ -51,16 +51,29 @@ class RecommendationService:
 
         Returns:
             str: The recommended recipe in Markdown format.
+
+        Raises:
+            ValueError: If the ingredients are empty.
+            ValueError: If the embedding generation fails.
         """
+        if not ingredients:
+            raise ValueError("Ingredients cannot be empty")
+
         ingredients_text = ", ".join(ingredients)
 
         query_embedding = self.embedding_service.generate_text_embedding(
             ingredients_text
         )
 
+        if not query_embedding:
+            raise ValueError("Failed to generate embedding for ingredients")
+
         similar_recipes = self.repository.search_by_embedding(
             query_embedding, limit=self.repository.settings.recommendation_search_limit
         )
+
+        if not similar_recipes:
+            similar_recipes = []
 
         return self.rag_pipeline.generate_recommendation(
             similar_recipes, ingredients_text
@@ -75,11 +88,15 @@ class RecommendationService:
 
         Returns:
             tuple[list[str], str]: A tuple containing the detected ingredients and the recommended recipe.
+
+        Raises:
+            ValueError: If the image is invalid.
+            ValueError: If no ingredients could be detected in the image.
+            ValueError: If the recommendation service fails.
         """
         if not self.vision_service.validate_image(image_data):
-            return (
-                [],
-                "Invalid image format. Please upload a valid image file (JPEG, PNG, WEBP, or GIF).",
+            raise ValueError(
+                "Invalid image format. Please upload a valid image file (JPEG, PNG, WEBP, or GIF)."
             )
 
         detected_ingredients = self.vision_service.extract_ingredients_from_image(
@@ -87,9 +104,8 @@ class RecommendationService:
         )
 
         if not detected_ingredients:
-            return (
-                [],
-                "No ingredients could be detected in the image. Please try uploading a clearer image with visible food ingredients.",
+            raise ValueError(
+                "No ingredients could be detected in the image. Please try uploading a clearer image with visible food ingredients."
             )
 
         recipe = self.recommend_recipe(detected_ingredients)
