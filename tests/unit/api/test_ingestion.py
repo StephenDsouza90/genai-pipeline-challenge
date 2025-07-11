@@ -193,11 +193,15 @@ def test_ingest_recipes_service_exception(
         files={"files": ("test_recipe.txt", recipe_file, "text/plain")},
     )
 
-    assert response.status_code == 500
-    assert (
-        "An unexpected error occurred while processing your request"
-        in response.json()["detail"]
-    )
+    assert response.status_code == 200
+    response_data = response.json()
+    assert "recipes" in response_data
+    assert len(response_data["recipes"]) == 1
+    
+    recipe_response = response_data["recipes"][0]
+    assert recipe_response["success"] is False
+    assert recipe_response["recipe"] is None
+    assert recipe_response["error"] == "Service error"
 
 
 def test_ingest_recipes_empty_file_list(client):
@@ -219,11 +223,15 @@ def test_ingest_recipes_invalid_file_encoding(client, mock_ingestion_service):
         "/ingest-recipes", files={"files": ("invalid.txt", invalid_file, "text/plain")}
     )
 
-    assert response.status_code == 400
-    assert (
-        "Invalid file encoding. Please ensure the file is UTF-8 encoded."
-        in response.json()["detail"]
-    )
+    assert response.status_code == 200
+    response_data = response.json()
+    assert "recipes" in response_data
+    assert len(response_data["recipes"]) == 1
+    
+    recipe_response = response_data["recipes"][0]
+    assert recipe_response["success"] is False
+    assert recipe_response["recipe"] is None
+    assert "invalid start byte" in recipe_response["error"]
 
 
 def test_ingest_recipes_response_format(
