@@ -17,13 +17,13 @@ class Settings(BaseSettings):
     """
 
     # Database configuration
-    database_url: str = os.getenv("DB_URL")
+    database_url: str = os.getenv("DB_URL", "")
     database_pool_recycle: int = 300
     database_max_retries: int = 5
     database_retry_delay: int = 2
 
     # OpenAI configuration
-    openai_api_key: str = os.getenv("OPENAI_API_KEY")
+    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     openai_chat_model: str = "gpt-4o"
     openai_embedding_model: str = "text-embedding-3-small"
 
@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     recipes_directory: str = "data/recipes"
     recipe_file_extension: str = ".txt"
     file_encoding: str = "utf-8"
-    
+
     # Startup Data Loading Configuration
     load_startup_data: bool = True
 
