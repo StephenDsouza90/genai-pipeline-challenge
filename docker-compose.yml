@@ -28,7 +28,7 @@ services:
         condition: service_healthy
     environment:
       DB_URL: postgresql+psycopg://pipeline:pipeline-pass@db:5432/challenge
-      OPENAI_API_KEY: <OPENAI_API_KEY>
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
       LOAD_STARTUP_DATA: ${LOAD_STARTUP_DATA:-true}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
