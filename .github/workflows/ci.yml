@@ -1,0 +1,44 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+      - feature/*
+      - bugfix/*
+      - hotfix/*
+      - docs/*
+      - test/*
+      - refactor/*
+
+jobs:
+  lint-format-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          pip install --no-cache-dir -e .
+
+      - name: Run Ruff Lint
+        run: |
+          ruff check
+
+      - name: Run Ruff Format
+        run: |
+          ruff format
+
+      - name: Run Unit Tests
+        run: |
+          python -m pytest tests/unit/ -v
