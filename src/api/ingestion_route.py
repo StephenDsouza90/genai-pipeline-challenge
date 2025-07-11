@@ -6,13 +6,12 @@ text files, with proper validation, error handling, and batch processing
 capabilities.
 """
 
-from fastapi import APIRouter, File, UploadFile, status, HTTPException
+from fastapi import APIRouter, File, UploadFile, status
 
 from src.api.schemas import IngestRecipeResponse, RecipeResponse, IngestRecipesResponse
 from src.config import Settings
 from src.core.ingestion_service import IngestionService
 from src.utils.logger import Logger
-from src.api.error_map import map_service_exception
 
 
 class IngestionRoutes:
@@ -86,17 +85,17 @@ class IngestionRoutes:
                     )
 
                     resp.append(
-                        IngestRecipeResponse(success=True, recipe=recipe_response, error=None)
+                        IngestRecipeResponse(
+                            success=True, recipe=recipe_response, error=None
+                        )
                     )
 
                 except Exception as e:
-                    self.logger.error(f"Error ingesting recipe from file {file.filename}: {e}")
+                    self.logger.error(
+                        f"Error ingesting recipe from file {file.filename}: {e}"
+                    )
                     resp.append(
-                        IngestRecipeResponse(
-                            success=False, 
-                            recipe=None, 
-                            error=str(e)
-                        )
+                        IngestRecipeResponse(success=False, recipe=None, error=str(e))
                     )
 
             self.logger.info(f"Processed {len(resp)} recipes")

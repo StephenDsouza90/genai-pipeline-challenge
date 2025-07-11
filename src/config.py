@@ -32,13 +32,13 @@ class Settings(BaseSettings):
 
     # Vision Service Configuration
     vision_max_tokens: int = 500
-    vision_temperature: float = 0.3 # Focus on accuracy
+    vision_temperature: float = 0.3  # Focus on accuracy
     vision_image_detail: str = "high"
     vision_supported_formats: list[str] = ["JPEG", "PNG", "WEBP", "GIF"]
 
     # RAG Pipeline Configuration
     rag_max_tokens: int = 1000
-    rag_temperature: float = 0.7 # Focus on creativity
+    rag_temperature: float = 0.7  # Focus on creativity
 
     # Search Configuration
     default_search_limit: int = 5
