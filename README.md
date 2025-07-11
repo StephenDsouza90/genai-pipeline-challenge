@@ -148,4 +148,33 @@ docker compose exec app pytest tests/e2e/test_recommendation.py
 ---
 
 ## Further Improvements
-*This section will be filled in later with ideas for future enhancements.*
+
+### New Features
+
+1. **Cuisine Type Selection**
+   - Allow users to specify preferred cuisine types (Italian, Mexican, Asian, Mediterranean, etc.)
+   - Enhance the RAG pipeline to consider cuisine preferences when generating suggestions
+
+2. **Dietary Restrictions & Preferences**
+   - Support common dietary filters: Vegetarian, Vegan, Gluten-free, Keto, Dairy-free
+   - Include allergen filtering for nuts, shellfish, eggs, and other common allergens
+   - Enable nutritional preferences like low-carb, high-protein, or low-sodium options
+
+3. **Recipe Difficulty & Time Filters**
+   - Categorize recipes by skill level: Beginner, Intermediate, Advanced
+   - Filter by cooking time: Quick (15 min), Medium (30 min), Extended (60+ min)
+
+### Technical Improvements
+
+1. **Intelligent Caching Layer**
+   - Implement Redis caching for frequently accessed recipes and search results
+   - Cache vector embeddings to reduce OpenAI API calls and improve response times
+
+2. **Advanced Image Processing**
+   - Optimize uploaded images with compression and format conversion
+   - Support batch image uploads for ingredient detection from multiple photos
+   - Implement image preprocessing to improve ingredient recognition accuracy
+
+3. **API Performance & Security**
+   - Add rate limiting to prevent API abuse and ensure fair usage
+   - Implement request/response compression to reduce bandwidth usage
