@@ -45,6 +45,9 @@ class EmbeddingService:
 
         Returns:
             list[float] | None: The embedding vector or None if generation fails.
+
+        Raises:
+            Exception: If the recipe embedding generation fails.
         """
         try:
             combined_text = f"Title: {title}\n\nIngredients:\n{ingredients}\n\nInstructions:\n{instructions}"
@@ -53,7 +56,7 @@ class EmbeddingService:
 
         except Exception as e:
             self.logger.error(f"Error generating recipe embedding: {e}")
-            return None
+            raise Exception(f"Error generating recipe embedding: {e}")
 
     def generate_text_embedding(self, text: str) -> list[float] | None:
         """
@@ -64,6 +67,9 @@ class EmbeddingService:
 
         Returns:
             list[float] | None: The embedding vector or None if generation fails.
+
+        Raises:
+            Exception: If the text embedding generation fails.
         """
         try:
             result = self.embedder.run(text=text)
@@ -71,4 +77,4 @@ class EmbeddingService:
 
         except Exception as e:
             self.logger.error(f"Error generating text embedding: {e}")
-            return None
+            raise Exception(f"Error generating text embedding: {e}")
