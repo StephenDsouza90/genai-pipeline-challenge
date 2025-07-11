@@ -169,6 +169,9 @@ docker compose exec app pytest tests/e2e/test_recommendation.py
    - Categorize recipes by skill level: Beginner, Intermediate, Advanced
    - Filter by cooking time: Quick (15 min), Medium (30 min), Extended (60+ min)
 
+4. **Upload Images along with Text**
+    - Allow users to upload images as well as text in case some ingredients are not available in the image  
+
 ### Technical Improvements
 
 1. **Intelligent Caching Layer**
