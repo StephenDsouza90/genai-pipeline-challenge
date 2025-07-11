@@ -40,6 +40,7 @@ Before running the commands, save the OpenAI API key in the `docker-compose.yml`
 ## Assumptions & Design Choices
 - **API Naming:** Endpoints use hyphens (`-`) instead of underscores (`_`) for improved readability and consistency with common RESTful API conventions.
 - **Logging:** All logs are in JSON format for easy integration with log aggregation and monitoring services (e.g., Datadog).
+- **Pinned Python version and dependencies**: Python version and its dependencies have been pinned to avoid breaking changes. Dependency updates can happen with dependabot.
 
 ---
 
@@ -111,6 +112,16 @@ Instructions:
 ---
 
 ## Testing
+Two type of tests have been implemented i.e. **Unit Tests** (mainly focusing on the API) and **End-to-End Tests**.
+
+### Unit Tests
+To run the unit tests, run the below command:
+
+```bash
+docker compose exec app pytest tests/unit/ -v
+```
+
+### End-to-End Tests
 To ensure a clean environment and proper test flow, run each command below one after the other:
 
 1. Reset and start all services:
