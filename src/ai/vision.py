@@ -42,9 +42,14 @@ class ImageVisionService:
 
         Returns:
             list[str]: List of detected ingredients.
+
+        Raises:
+            Exception: If the image extraction fails.
         """
         try:
-            image_base64 = base64.b64encode(image_data).decode(self.settings.file_encoding)
+            image_base64 = base64.b64encode(image_data).decode(
+                self.settings.file_encoding
+            )
 
             messages = [
                 {
@@ -87,7 +92,7 @@ class ImageVisionService:
 
         except Exception as e:
             self.logger.error(f"Error extracting ingredients from image: {e}")
-            return []
+            raise Exception(f"Error extracting ingredients from image: {e}")
 
     def validate_image(self, image_data: bytes) -> bool:
         """
@@ -98,10 +103,13 @@ class ImageVisionService:
 
         Returns:
             bool: True if the image is valid, False otherwise.
+
+        Raises:
+            Exception: If the image validation fails.
         """
         try:
             image = Image.open(io.BytesIO(image_data))
             return image.format in self.settings.vision_supported_formats
         except Exception as e:
             self.logger.error(f"Error validating image: {e}")
-            return False
+            raise Exception(f"Error validating image: {e}")
