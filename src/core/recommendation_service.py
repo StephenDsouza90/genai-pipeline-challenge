@@ -72,9 +72,6 @@ class RecommendationService:
             query_embedding, limit=self.repository.settings.recommendation_search_limit
         )
 
-        if not similar_recipes:
-            similar_recipes = []
-
         return self.rag_pipeline.generate_recommendation(
             similar_recipes, ingredients_text
         )
