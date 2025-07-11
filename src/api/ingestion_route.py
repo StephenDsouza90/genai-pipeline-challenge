@@ -6,7 +6,7 @@ text files, with proper validation, error handling, and batch processing
 capabilities.
 """
 
-from fastapi import APIRouter, File, UploadFile, status
+from fastapi import APIRouter, File, UploadFile, status, HTTPException
 
 from src.api.schemas import IngestRecipeResponse, RecipeResponse, IngestRecipesResponse
 from src.config import Settings
@@ -61,11 +61,11 @@ class IngestionRoutes:
             Raises:
                 HTTPException: If the ingestion service fails.
             """
-            try:
-                self.logger.info(f"Ingesting {len(files)} recipes")
+            self.logger.info(f"Ingesting {len(files)} recipes")
 
-                resp = []
-                for file in files:
+            resp = []
+            for file in files:
+                try:
                     content = await file.read()
                     recipe = self.ingestion_service.ingest_recipe(
                         content.decode("utf-8")
@@ -86,12 +86,18 @@ class IngestionRoutes:
                     )
 
                     resp.append(
-                        IngestRecipeResponse(success=True, recipe=recipe_response)
+                        IngestRecipeResponse(success=True, recipe=recipe_response, error=None)
                     )
 
-                self.logger.info(f"Ingested {len(resp)} recipes")
+                except Exception as e:
+                    self.logger.error(f"Error ingesting recipe from file {file.filename}: {e}")
+                    resp.append(
+                        IngestRecipeResponse(
+                            success=False, 
+                            recipe=None, 
+                            error=str(e)
+                        )
+                    )
 
-                return IngestRecipesResponse(recipes=resp)
-
-            except Exception as e:
-                raise map_service_exception(e, self.logger)
+            self.logger.info(f"Processed {len(resp)} recipes")
+            return IngestRecipesResponse(recipes=resp)

@@ -112,7 +112,7 @@ Instructions:
 ---
 
 ## Testing
-Two type of tests have been implemented i.e. **Unit Tests** (mainly focusing on the API) and **End-to-End Tests**.
+Two type of tests have been implemented i.e. **Unit Tests** (mainly focusing on the API) and **End-to-End Tests** (Basic Success Tests).
 
 ### Unit Tests
 To run the unit tests, run the below command:

@@ -14,7 +14,13 @@ async def test_recommend_recipe_from_text_success():
     Test that the recommendation API returns a success response.
     """
     body = {
-        "ingredients": ["chicken", "mixed vegetables", "soy sauce", "vegetable oil", "clove garlic"]
+        "ingredients": [
+            "chicken",
+            "mixed vegetables",
+            "soy sauce",
+            "vegetable oil",
+            "clove garlic",
+        ]
     }
     async with httpx.AsyncClient(base_url=BASE_URL, timeout=TIMEOUT) as client:
         response = await client.post("/api/v1/recommend-recipe", json=body)
@@ -38,7 +44,10 @@ async def test_recommend_recipe_from_image_success():
     Test that the recommendation API returns a success response.
     """
     files = [
-        ("image", ("food1.webp", open("tests/assets/photos/food1.webp", "rb"), "image/webp"))
+        (
+            "image",
+            ("food1.webp", open("tests/assets/photos/food1.webp", "rb"), "image/webp"),
+        )
     ]
     async with httpx.AsyncClient(base_url=BASE_URL, timeout=TIMEOUT) as client:
         response = await client.post("/api/v1/recommend-recipe-from-image", files=files)
