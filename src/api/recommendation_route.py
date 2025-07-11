@@ -6,7 +6,7 @@ text-based ingredient input and image-based ingredient detection with
 proper error handling and response formatting.
 """
 
-from fastapi import APIRouter, status, File, UploadFile, HTTPException
+from fastapi import APIRouter, status, File, UploadFile
 
 from src.api.schemas import (
     RecommendRecipeRequest,
@@ -17,6 +17,7 @@ from src.config import Settings
 from src.constants import IMAGE_CONTENT_TYPE_PREFIX
 from src.core.recommendation_service import RecommendationService
 from src.utils.logger import Logger
+from src.api.error_map import map_service_exception
 
 
 class RecommendationRoutes:
@@ -62,6 +63,9 @@ class RecommendationRoutes:
 
             Returns:
                 RecommendRecipeResponse: The response containing the recommended recipe.
+
+            Raises:
+                HTTPException: If the recommendation service fails.
             """
             try:
                 self.logger.info(f"Recommend recipe request: {request.ingredients}")
@@ -71,13 +75,11 @@ class RecommendationRoutes:
                 )
 
                 self.logger.info(f"Recommend recipe response: {response}")
+
+                return RecommendRecipeResponse(recipe=response)
+
             except Exception as e:
-                self.logger.error(f"Error recommending recipe: {e}")
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=self.settings.recipe_recommendation_error,
-                )
-            return RecommendRecipeResponse(recipe=response)
+                raise map_service_exception(e, self.logger)
 
         @self.router.post(
             "/recommend-recipe-from-image",
@@ -100,6 +102,9 @@ class RecommendationRoutes:
 
             Returns:
                 RecommendRecipeFromImageResponse: The response containing detected ingredients and recommended recipe.
+
+            Raises:
+                HTTPException: If the recommendation service fails.
             """
             try:
                 self.logger.info(f"Image content type: {image.content_type}")
@@ -107,10 +112,7 @@ class RecommendationRoutes:
                 if not image.content_type or not image.content_type.startswith(
                     IMAGE_CONTENT_TYPE_PREFIX
                 ):
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Invalid file type. Please upload an image file.",
-                    )
+                    raise ValueError("Invalid file type. Please upload an image file.")
 
                 image_data = await image.read()
                 detected_ingredients, recipe = (
@@ -120,13 +122,9 @@ class RecommendationRoutes:
                 self.logger.info(f"Detected ingredients: {detected_ingredients}")
                 self.logger.info(f"Recipe: {recipe}")
 
-            except Exception as e:
-                self.logger.error(f"Error reading image: {e}")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Failed to read the uploaded image file.",
+                return RecommendRecipeFromImageResponse(
+                    detected_ingredients=detected_ingredients, recipe=recipe
                 )
 
-            return RecommendRecipeFromImageResponse(
-                detected_ingredients=detected_ingredients, recipe=recipe
-            )
+            except Exception as e:
+                raise map_service_exception(e, self.logger)

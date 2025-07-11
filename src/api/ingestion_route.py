@@ -6,12 +6,13 @@ text files, with proper validation, error handling, and batch processing
 capabilities.
 """
 
-from fastapi import APIRouter, HTTPException, File, UploadFile, status
+from fastapi import APIRouter, File, UploadFile, status
 
 from src.api.schemas import IngestRecipeResponse, RecipeResponse, IngestRecipesResponse
 from src.config import Settings
 from src.core.ingestion_service import IngestionService
 from src.utils.logger import Logger
+from src.api.error_map import map_service_exception
 
 
 class IngestionRoutes:
@@ -56,6 +57,9 @@ class IngestionRoutes:
 
             Returns:
                 IngestRecipesResponse: The response containing the ingested recipes.
+
+            Raises:
+                HTTPException: If the ingestion service fails.
             """
             try:
                 self.logger.info(f"Ingesting {len(files)} recipes")
@@ -66,40 +70,28 @@ class IngestionRoutes:
                     recipe = self.ingestion_service.ingest_recipe(
                         content.decode("utf-8")
                     )
-                    if recipe is None:
-                        self.logger.error(f"Failed to ingest recipe: {file.filename}")
-                        resp.append(
-                            IngestRecipeResponse(
-                                success=False,
-                                recipe=None,
-                                error=self.settings.recipe_ingestion_error,
-                            )
-                        )
-                    else:
-                        self.logger.info(f"Ingested recipe: {file.filename}")
-                        recipe_response = RecipeResponse(
-                            id=recipe.id,
-                            title=recipe.title,
-                            ingredients=recipe.ingredients,
-                            instructions=recipe.instructions,
-                            # embedding=recipe.embedding, # NOTE: We don't need to return the embedding for now
-                            created_at=recipe.created_at.isoformat()
-                            if recipe.created_at
-                            else None,
-                            updated_at=recipe.updated_at.isoformat()
-                            if recipe.updated_at
-                            else None,
-                        )
-                        resp.append(
-                            IngestRecipeResponse(success=True, recipe=recipe_response)
-                        )
+
+                    recipe_response = RecipeResponse(
+                        id=recipe.id,
+                        title=recipe.title,
+                        ingredients=recipe.ingredients,
+                        instructions=recipe.instructions,
+                        # embedding=recipe.embedding, # NOTE: We don't need to return the embedding for now
+                        created_at=recipe.created_at.isoformat()
+                        if recipe.created_at
+                        else None,
+                        updated_at=recipe.updated_at.isoformat()
+                        if recipe.updated_at
+                        else None,
+                    )
+
+                    resp.append(
+                        IngestRecipeResponse(success=True, recipe=recipe_response)
+                    )
 
                 self.logger.info(f"Ingested {len(resp)} recipes")
-            except Exception as e:
-                self.logger.error(f"Error ingesting recipes: {e}")
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=self.settings.recipe_ingestion_error,
-                )
 
-            return IngestRecipesResponse(recipes=resp)
+                return IngestRecipesResponse(recipes=resp)
+
+            except Exception as e:
+                raise map_service_exception(e, self.logger)
