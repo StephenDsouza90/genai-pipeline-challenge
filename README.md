@@ -17,17 +17,22 @@ This project is a proof-of-concept AI-powered recipe recommendation system. It p
 
 ## How to Run
 
-Before running the commands, save the OpenAI API key in the `docker-compose.yml` file in `OPENAI_API_KEY`
+Before running the command:
+- Save the OpenAI API key in the `docker-compose.yml` file in `OPENAI_API_KEY` (Optional or see below)
+- Ensure the `data.zip` or `data/recipes/` is in the root folder.
 
 1. **Build and start the app and database:**
    ```sh
    docker compose up --build -d
    ```
+   ```sh
+   OPENAI_API_KEY=api-key docker compose up --build -d
+   ```
    This command builds the Docker images and starts both the FastAPI app and the Postgres database. On startup, the app automatically ingests the provided recipes into the database.
 
 2. **Start without loading initial data:**
    ```sh
-   LOAD_STARTUP_DATA=false docker compose up --build -d
+   OPENAI_API_KEY=api-key LOAD_STARTUP_DATA=false docker compose up --build -d
    ```
    Use this command if you want to start the app with an empty database and load recipes manually via the API.
 
