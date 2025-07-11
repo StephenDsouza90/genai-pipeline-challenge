@@ -63,6 +63,9 @@ class RecipeRAGPipeline:
 
         Returns:
             str: Generated recipe recommendation in Markdown format.
+
+        Raises:
+            Exception: If the recommendation generation fails.
         """
         try:
             result = self.pipeline.run(
@@ -78,4 +81,4 @@ class RecipeRAGPipeline:
             )
         except Exception as e:
             self.logger.error(f"Error generating recipe recommendation: {e}")
-            return self.settings.recipe_recommendation_error
+            raise Exception(self.settings.recipe_recommendation_error)
